@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Bash(python3 -c \":*)",
-      "Bash(node -e \":*)"
+      "Bash(node -e \":*)",
+      "Bash(find \"C:\\\\Users\\\\sumit\\\\Downloads\\\\Project-1\\\\app\\\\\\(app\\)\\\\practice\" -type f)",
+      "Bash(find \"app/\\(app\\)/practice\" -type f -o -type d)"
     ]
   }
 }

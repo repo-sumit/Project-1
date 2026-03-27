@@ -22,7 +22,6 @@ export default function ResultPage() {
   const { questions, answers, result, setResult, resetSession } = useSessionStore()
 
   const [isLoading, setIsLoading] = useState(!result)
-  const [showRetryList, setShowRetryList] = useState(false)
 
   // Ensures finaliseSession() runs at most once, even if React remounts
   // the component (Strict Mode, back-navigation, etc.).
@@ -122,9 +121,8 @@ export default function ResultPage() {
     accuracy >= 40 ? 'Keep practising!' :
     'Review the explanations — you\'ll get better!'
 
-  // Incorrect questions for review
+  // Count incorrect answers — used to decide which CTA to show
   const incorrectAnswers = Object.values(answers).filter((a) => !a.isCorrect)
-  const correctQuestion = (id: string) => questions.find((q) => q.id === id)
 
   return (
     <div className="flex flex-col min-h-screen bg-white px-4 pt-16 pb-8">
@@ -153,43 +151,43 @@ export default function ResultPage() {
         <ResultStat icon="🎯" label="Accuracy" value={`${result.accuracyPct}%`} color="text-blue-600" bg="bg-blue-50" />
       </div>
 
-      {/* Review mistakes */}
-      {incorrectAnswers.length > 0 && (
-        <div className="mb-8">
+      {/* ── Review mistakes CTA ───────────────────────────────────────────── */}
+      <div className="mb-8">
+        {incorrectAnswers.length === 0 ? (
+          // Perfect score — celebrate, no review needed
+          <div className="flex items-center gap-3 bg-green-50 border border-green-100 rounded-2xl px-4 py-3.5">
+            <span className="text-2xl">✅</span>
+            <div>
+              <p className="text-sm font-semibold text-green-800">Great job — no mistakes to review!</p>
+              <p className="text-xs text-green-600 mt-0.5">You answered everything correctly.</p>
+            </div>
+          </div>
+        ) : (
+          // Has mistakes — show a clear CTA to the full review screen
           <button
-            onClick={() => setShowRetryList(!showRetryList)}
-            className="w-full flex items-center justify-between p-4 bg-red-50 rounded-2xl text-left"
+            onClick={() => router.push(`/practice/review/${sessionId}`)}
+            className="w-full flex items-center justify-between p-4 bg-red-50 border border-red-100 rounded-2xl active:bg-red-100 transition-colors text-left"
           >
-            <span className="text-sm font-semibold text-red-700">
-              📋 Review {incorrectAnswers.length} incorrect answer{incorrectAnswers.length > 1 ? 's' : ''}
-            </span>
+            <div className="flex items-center gap-3">
+              <span className="text-xl">📋</span>
+              <div>
+                <p className="text-sm font-semibold text-red-700">
+                  Review Mistakes
+                </p>
+                <p className="text-xs text-red-500 mt-0.5">
+                  {incorrectAnswers.length} question{incorrectAnswers.length > 1 ? 's' : ''} with explanations
+                </p>
+              </div>
+            </div>
             <svg
-              className={`w-4 h-4 text-red-500 transition-transform ${showRetryList ? 'rotate-180' : ''}`}
-              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}
+              className="w-4 h-4 text-red-400 flex-shrink-0"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
             </svg>
           </button>
-
-          {showRetryList && (
-            <div className="mt-2 space-y-3 animate-slide-up">
-              {incorrectAnswers.map((ans) => {
-                const q = correctQuestion(ans.questionId)
-                if (!q) return null
-                return (
-                  <div key={ans.questionId} className="bg-gray-50 rounded-2xl p-4">
-                    <p className="text-sm text-gray-700 font-medium mb-2">{q.questionText}</p>
-                    <p className="text-xs text-red-500 mb-1">
-                      Your answer: {ans.selectedOption} · Correct: {ans.correctOption}
-                    </p>
-                    <p className="text-xs text-gray-500">{ans.explanation}</p>
-                  </div>
-                )
-              })}
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
 
       {/* CTAs */}
       <div className="flex flex-col gap-3 mt-auto">

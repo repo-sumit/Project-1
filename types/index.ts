@@ -142,6 +142,19 @@ export interface WeakChapter {
   accuracyPct: number
 }
 
+// ─── Mistake Review ──────────────────────────────────────────────────────────
+
+export interface MistakeItem {
+  questionId:     string
+  questionText:   string
+  options:        { A: string; B: string; C: string; D: string }
+  selectedOption: string   // what the student chose (wrong)
+  correctOption:  string   // 'A' | 'B' | 'C' | 'D'
+  explanation:    string
+  chapterName:    string
+  yearTag:        number | null
+}
+
 // ─── Streak ──────────────────────────────────────────────────────────────────
 
 export interface Streak {
