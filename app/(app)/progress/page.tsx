@@ -3,20 +3,26 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useUserStore } from '@/store/userStore'
-import type { Progress } from '@/types'
+import type { Progress, WeakChapter } from '@/types'
 import SubjectProgress from '@/components/progress/SubjectProgress'
 import SessionHistory from '@/components/progress/SessionHistory'
+import WeakChapters, { WeakChaptersSkeleton } from '@/components/progress/WeakChapters'
 
 export default function ProgressPage() {
   const router = useRouter()
-  const user = useUserStore((s) => s.user)
-  const [progress, setProgress] = useState<Progress | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
+  const user   = useUserStore((s) => s.user)
+
+  const [progress,         setProgress]         = useState<Progress | null>(null)
+  const [weakChapters,     setWeakChapters]     = useState<WeakChapter[] | null>(null)
+  const [isLoading,        setIsLoading]        = useState(true)
+  const [isLoadingWeak,    setIsLoadingWeak]    = useState(true)
 
   useEffect(() => {
     if (!user) return
+    // Fire both fetches in parallel — weak chapters doesn't block the main stats
     fetchProgress()
-  }, [user])
+    fetchWeakChapters()
+  }, [user]) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function fetchProgress() {
     setIsLoading(true)
@@ -26,10 +32,22 @@ export default function ProgressPage() {
       const data: Progress = await res.json()
       setProgress(data)
     } catch {
-      // Show empty state on error
       setProgress(null)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  async function fetchWeakChapters() {
+    setIsLoadingWeak(true)
+    try {
+      const res = await fetch(`/api/weak-chapters?userId=${user!.id}`)
+      const data: WeakChapter[] = res.ok ? await res.json() : []
+      setWeakChapters(data)
+    } catch {
+      setWeakChapters([]) // never block the page
+    } finally {
+      setIsLoadingWeak(false)
     }
   }
 
@@ -85,6 +103,28 @@ export default function ProgressPage() {
               )}
             </div>
           )}
+
+          {/* ── Focus Areas (Weak Chapters) ──────────────────────────── */}
+          <section className="mb-6">
+            <div className="flex items-center justify-between mb-3">
+              <h2 className="text-base font-semibold text-gray-800">Focus Areas</h2>
+              {/* Badge: only show count when there are weak chapters */}
+              {!isLoadingWeak && (weakChapters?.length ?? 0) > 0 && (
+                <span className="text-xs font-semibold text-red-600 bg-red-50 px-2 py-0.5 rounded-full">
+                  {weakChapters!.length} chapter{weakChapters!.length > 1 ? 's' : ''} need work
+                </span>
+              )}
+            </div>
+            {isLoadingWeak ? (
+              <WeakChaptersSkeleton />
+            ) : (
+              <WeakChapters
+                chapters={weakChapters ?? []}
+                userId={user!.id}
+                hasData={hasData}
+              />
+            )}
+          </section>
 
           {/* Subject progress */}
           {progress!.subjectProgress.length > 0 && (

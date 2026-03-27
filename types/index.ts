@@ -130,6 +130,18 @@ export interface Progress {
   subjectProgress: SubjectProgress[]
 }
 
+// ─── Weak Chapters ───────────────────────────────────────────────────────────
+
+export interface WeakChapter {
+  chapterId:   string
+  chapterName: string
+  subjectId:   string
+  subject:     string   // display name e.g. 'Mathematics'
+  attempted:   number
+  correct:     number
+  accuracyPct: number
+}
+
 // ─── Streak ──────────────────────────────────────────────────────────────────
 
 export interface Streak {
