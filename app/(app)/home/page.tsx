@@ -7,6 +7,7 @@ import { useSessionStore } from '@/store/sessionStore'
 import type { DailySet } from '@/types'
 import { getLocal, setLocal, todayString } from '@/lib/cache'
 import { STORAGE_KEYS } from '@/lib/constants'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import DailySetCard from '@/components/home/DailySetCard'
 import StreakCard from '@/components/home/StreakCard'
 import QuickStats from '@/components/home/QuickStats'
@@ -30,6 +31,17 @@ export default function HomePage() {
     loadStreakAndStats()
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id])
+
+  // Track daily_set_loaded once per unique set (covers both cache and fresh API hits)
+  useEffect(() => {
+    if (!dailySet || !user?.id) return
+    trackEvent(user.id, EVENTS.DAILY_SET_LOADED, {
+      dailySetId:    dailySet.dailySetId,
+      questionCount: dailySet.questionCount,
+      isCompleted:   dailySet.isCompleted,
+      mix:           dailySet.mix ?? null,
+    })
+  }, [dailySet?.dailySetId]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Load daily set ─────────────────────────────────────────────────────────
   async function loadDailySet() {
@@ -111,10 +123,24 @@ export default function HomePage() {
         ? (await res.json()).sessionId
         : `local-${Date.now()}`
 
+      // Track before navigation so keepalive carries the request through
+      trackEvent(user.id, EVENTS.SESSION_STARTED, {
+        sessionId,
+        dailySetId:    dailySet.dailySetId,
+        source:        'daily_set',
+        questionCount: dailySet.questionCount,
+      })
+
       startSession(sessionId, dailySet.questions, dailySet.dailySetId)
       router.push(`/practice/session/${sessionId}`)
     } catch {
       const sessionId = `local-${Date.now()}`
+      trackEvent(user.id, EVENTS.SESSION_STARTED, {
+        sessionId,
+        dailySetId:    dailySet!.dailySetId,
+        source:        'daily_set',
+        questionCount: dailySet!.questionCount,
+      })
       startSession(sessionId, dailySet!.questions, dailySet!.dailySetId)
       router.push(`/practice/session/${sessionId}`)
     }

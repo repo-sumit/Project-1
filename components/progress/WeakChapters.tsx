@@ -4,6 +4,7 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useSessionStore } from '@/store/sessionStore'
 import { getSubjectById } from '@/lib/constants'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import type { WeakChapter } from '@/types'
 
 interface WeakChaptersProps {
@@ -51,7 +52,15 @@ export default function WeakChapters({ chapters, userId, hasData }: WeakChapters
         ? (await sRes.json()).sessionId
         : `local-${Date.now()}`
 
-      // 3. Hydrate store and navigate
+      // 3. Track and navigate (keepalive ensures request survives route change)
+      trackEvent(userId, EVENTS.CHAPTER_PRACTICE_STARTED, {
+        sessionId,
+        chapterId:   chapter.chapterId,
+        chapterName: chapter.chapterName,
+        source:      'weak_chapters',
+        accuracyPct: chapter.accuracyPct,
+      })
+
       startSession(sessionId, qData.questions)
       router.push(`/practice/session/${sessionId}`)
     } catch {

@@ -7,6 +7,7 @@ import { useUserStore } from '@/store/userStore'
 import type { SessionResult } from '@/types'
 import { accuracyPct } from '@/lib/xp'
 import { todayIST } from '@/lib/date'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 
 // ─── Result Page ──────────────────────────────────────────────────────────────
 // Shows score, XP, streak after completing a session.
@@ -61,6 +62,16 @@ export default function ResultPage() {
           currentStreak: data.streak.current,
           longestStreak: data.streak.longest,
           lastCompletedDate: todayIST(),
+        })
+        // Track session completion (fire-and-forget)
+        trackEvent(user?.id, EVENTS.SESSION_COMPLETED, {
+          sessionId,
+          score:           data.score,
+          total:           data.total,
+          accuracyPct:     data.accuracyPct,
+          xpEarned:        data.xpEarned,
+          streakIncreased: data.streak.increased,
+          streakCurrent:   data.streak.current,
         })
       } else {
         // Fallback: compute result locally

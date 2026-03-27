@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { getLocal, setLocal, generateUUID, todayString } from '@/lib/cache'
 import { STORAGE_KEYS } from '@/lib/constants'
 import { useUserStore } from '@/store/userStore'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import type { User } from '@/types'
 
 export default function NamePage() {
@@ -38,6 +39,13 @@ export default function NamePage() {
 
     // Save locally first (instant)
     setUser(newUser)
+
+    // Track onboarding completion (fire-and-forget)
+    trackEvent(newUser.id, EVENTS.ONBOARDING_COMPLETED, {
+      classLevel:   newUser.classLevel,
+      subjectIds:   newUser.subjectIds,
+      subjectCount: newUser.subjectIds.length,
+    })
 
     // Save to backend (fire-and-forget — don't block navigation)
     fetch('/api/onboarding', {

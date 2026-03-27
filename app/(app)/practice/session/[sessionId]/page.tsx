@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSessionStore } from '@/store/sessionStore'
 import { useUserStore } from '@/store/userStore'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import type { StoredAnswer } from '@/types'
 import QuestionCard from '@/components/practice/QuestionCard'
 import ProgressDots from '@/components/practice/ProgressDots'
@@ -98,6 +99,14 @@ export default function SessionPage() {
           correctOption: data.correctOption,
           explanation: data.explanation,
           xpAwarded: data.xpAwarded,
+        })
+        // Fire-and-forget — does not block the UI update
+        trackEvent(user?.id, EVENTS.ANSWER_SUBMITTED, {
+          sessionId,
+          questionId:  currentQuestion.id,
+          chapterId:   currentQuestion.chapterId,
+          isCorrect:   data.isCorrect,
+          questionNum: currentIndex + 1,
         })
       } else {
         // Server error — degrade gracefully, no XP awarded

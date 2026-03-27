@@ -137,6 +137,29 @@ CREATE TABLE streaks (
 );
 
 
+-- ─── TABLE: events ───────────────────────────────────────────────────────────
+-- Lightweight behavioural analytics.  One row per trackable user action.
+-- Fire-and-forget from the client → POST /api/analytics → insert here.
+-- Never joined in product queries — read only from the Supabase dashboard
+-- or via the example queries at the bottom of this file.
+CREATE TABLE events (
+  id         UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id    UUID        REFERENCES users(id) ON DELETE CASCADE,
+  event_name TEXT        NOT NULL,
+  metadata   JSONB       NOT NULL DEFAULT '{}',
+  created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ── Migration for existing deployments (run once, idempotent) ──────────────
+-- CREATE TABLE IF NOT EXISTS events (
+--   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+--   user_id UUID REFERENCES users(id) ON DELETE CASCADE,
+--   event_name TEXT NOT NULL,
+--   metadata JSONB NOT NULL DEFAULT '{}',
+--   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+-- );
+
+
 -- ─── TABLE: user_progress ─────────────────────────────────────────────────────
 -- Subject-level aggregates. Updated after each completed session.
 CREATE TABLE user_progress (
@@ -166,6 +189,9 @@ CREATE INDEX idx_sessions_completed_at    ON sessions(completed_at);
 CREATE INDEX idx_daily_sets_user_date     ON daily_sets(user_id, set_date);
 CREATE INDEX idx_user_progress_user       ON user_progress(user_id);
 CREATE INDEX idx_chapters_subject_id      ON chapters(subject_id);
+CREATE INDEX idx_events_user_id           ON events(user_id);
+CREATE INDEX idx_events_event_name        ON events(event_name);
+CREATE INDEX idx_events_created_at        ON events(created_at DESC);
 
 
 -- ══════════════════════════════════════════════════════════════════════════════
@@ -183,6 +209,7 @@ ALTER TABLE sessions        DISABLE ROW LEVEL SECURITY;
 ALTER TABLE attempts        DISABLE ROW LEVEL SECURITY;
 ALTER TABLE streaks         DISABLE ROW LEVEL SECURITY;
 ALTER TABLE user_progress   DISABLE ROW LEVEL SECURITY;
+ALTER TABLE events          DISABLE ROW LEVEL SECURITY;
 
 
 -- ══════════════════════════════════════════════════════════════════════════════

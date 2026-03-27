@@ -3,6 +3,8 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSessionStore } from '@/store/sessionStore'
+import { useUserStore } from '@/store/userStore'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import type { MistakeItem } from '@/types'
 
 // ─── Mistake Review Page ───────────────────────────────────────────────────────
@@ -17,6 +19,7 @@ export default function ReviewPage() {
   const sessionId = params.sessionId as string
 
   const resetSession = useSessionStore((s) => s.resetSession)
+  const user         = useUserStore((s) => s.user)
 
   const [mistakes,   setMistakes]   = useState<MistakeItem[] | null>(null)
   const [isLoading,  setIsLoading]  = useState(true)
@@ -31,6 +34,11 @@ export default function ReviewPage() {
       const res  = await fetch(`/api/session-mistakes?sessionId=${sessionId}`)
       const data = res.ok ? (await res.json()) as MistakeItem[] : []
       setMistakes(data)
+      // Track after fetch so we include the accurate mistake count
+      trackEvent(user?.id, EVENTS.MISTAKE_REVIEW_OPENED, {
+        sessionId,
+        mistakeCount: data.length,
+      })
     } catch {
       setMistakes([])
     } finally {

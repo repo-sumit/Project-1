@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useUserStore }    from '@/store/userStore'
 import { useSessionStore } from '@/store/sessionStore'
 import { getSubjectById }  from '@/lib/constants'
+import { trackEvent, EVENTS } from '@/lib/analytics'
 import type { Subject }    from '@/types'
 
 interface ChapterWithProgress {
@@ -90,6 +91,14 @@ export default function PracticePage() {
       const sessionId = sRes.ok
         ? (await sRes.json()).sessionId
         : `local-${Date.now()}`
+
+      // Track before navigation (keepalive carries the request through route change)
+      trackEvent(user.id, EVENTS.CHAPTER_PRACTICE_STARTED, {
+        sessionId,
+        chapterId,
+        chapterName,
+        source: 'chapter_practice',
+      })
 
       startSession(sessionId, qData.questions)
       router.push(`/practice/session/${sessionId}`)
