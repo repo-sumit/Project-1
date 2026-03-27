@@ -1,0 +1,59 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Base ──────────────────────────────────────────────────────────────────── */
+@layer base {
+  :root {
+    --nav-height: 64px;
+  }
+
+  html {
+    /* Prevent font scaling on device rotation */
+    -webkit-text-size-adjust: 100%;
+    /* Smooth scrolling */
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-white text-gray-900 antialiased;
+    /* Prevent overscroll bounce on iOS */
+    overscroll-behavior: none;
+  }
+
+  /* Remove tap highlight on mobile */
+  * {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Make sure content doesn't go under fixed bottom nav */
+  .page-content {
+    padding-bottom: calc(var(--nav-height) + 1rem);
+  }
+}
+
+/* ─── Utilities ─────────────────────────────────────────────────────────────── */
+@layer utilities {
+  /* Safe area insets for notched phones (iPhone, some Android) */
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 1rem);
+  }
+
+  .pt-safe {
+    padding-top: env(safe-area-inset-top);
+  }
+
+  /* Tap target — minimum 44×44px for accessibility */
+  .tap-target {
+    @apply min-h-[44px] min-w-[44px];
+  }
+
+  /* Hide scrollbar but keep scrollability */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
