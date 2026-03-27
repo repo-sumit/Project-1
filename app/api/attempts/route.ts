@@ -63,13 +63,18 @@ export async function POST(req: NextRequest) {
         .maybeSingle()
 
       if (existing) {
-        // Already answered — return the stored result (idempotent)
-        const ans = MOCK_ANSWERS[questionId]
+        // Already answered — fetch the real correct answer from DB so the
+        // explanation panel shows the right option (not the user's wrong guess).
+        const { data: q } = await supabase
+          .from('questions')
+          .select('correct_option, explanation')
+          .eq('id', questionId)
+          .single()
         return NextResponse.json({
           isCorrect:     existing.is_correct,
-          correctOption: existing.is_correct ? opt : (ans?.correctOption ?? opt),
-          explanation:   ans?.explanation ?? 'You already answered this question.',
-          xpAwarded:     0,
+          correctOption: q?.correct_option ?? opt,
+          explanation:   q?.explanation ?? 'You already answered this question.',
+          xpAwarded:     0, // no XP for re-submissions
         })
       }
     }

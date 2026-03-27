@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, isSupabaseConfigured } from '@/lib/supabase-server'
 import { xpForSession, calculateNewStreak, accuracyPct } from '@/lib/xp'
+import { todayIST } from '@/lib/date'
 
 type AttemptQuestionRelation = { subject_id: string } | { subject_id: string }[] | null
 
@@ -24,7 +25,9 @@ export async function PATCH(
       )
     }
 
-    const today = new Date().toISOString().slice(0, 10)
+    // Use IST date so students practising after midnight in India
+    // get the correct calendar date, not yesterday's UTC date.
+    const today = todayIST()
     const accPct = accuracyPct(correctCount, totalQuestions)
 
     // ── Demo mode ─────────────────────────────────────────────────────────
@@ -43,6 +46,37 @@ export async function PATCH(
     // ── Supabase mode ─────────────────────────────────────────────────────
     const supabase = createServerClient()!
 
+    // ── Idempotency check ─────────────────────────────────────────────────
+    // If this session was already completed (e.g. user navigated back and
+    // the result page re-mounted), return the stored result without
+    // re-awarding XP or re-incrementing the streak.
+    const { data: existingSession } = await supabase
+      .from('sessions')
+      .select('completed_at, correct_count, xp_earned, daily_set_id')
+      .eq('id', sessionId)
+      .single()
+
+    if (existingSession?.completed_at) {
+      // Already finalised — return what was stored
+      const { data: streakNow } = await supabase
+        .from('streaks')
+        .select('current_streak, longest_streak')
+        .eq('user_id', userId)
+        .single()
+      return NextResponse.json({
+        sessionId,
+        score:       existingSession.correct_count ?? correctCount,
+        total:       totalQuestions,
+        accuracyPct: accPct,
+        xpEarned:    existingSession.xp_earned ?? 0,
+        streak: {
+          current:  streakNow?.current_streak ?? 1,
+          longest:  streakNow?.longest_streak ?? 1,
+          increased: false, // already counted on first completion
+        },
+      })
+    }
+
     // Get current streak
     const { data: streakRow } = await supabase
       .from('streaks')
@@ -60,8 +94,9 @@ export async function PATCH(
 
     const increased = newCurrent > currentStreak
 
-    // Calculate XP
-    const xp = xpForSession(correctCount, totalQuestions, true, newCurrent)
+    // Only give daily-set completion bonus if this session came from a daily set
+    const isDailySet = Boolean(existingSession?.daily_set_id)
+    const xp = xpForSession(correctCount, totalQuestions, isDailySet, newCurrent)
 
     // Update session record
     await supabase.from('sessions').update({

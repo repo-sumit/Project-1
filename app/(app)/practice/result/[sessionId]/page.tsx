@@ -1,11 +1,12 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSessionStore } from '@/store/sessionStore'
 import { useUserStore } from '@/store/userStore'
 import type { SessionResult } from '@/types'
 import { accuracyPct } from '@/lib/xp'
+import { todayIST } from '@/lib/date'
 
 // ─── Result Page ──────────────────────────────────────────────────────────────
 // Shows score, XP, streak after completing a session.
@@ -23,11 +24,17 @@ export default function ResultPage() {
   const [isLoading, setIsLoading] = useState(!result)
   const [showRetryList, setShowRetryList] = useState(false)
 
+  // Ensures finaliseSession() runs at most once, even if React remounts
+  // the component (Strict Mode, back-navigation, etc.).
+  const hasFinalized = useRef(false)
+
   // ── Finalise session on mount ──────────────────────────────────────────
   useEffect(() => {
-    if (result) return // already computed
+    if (result) return            // already have a result in store
+    if (hasFinalized.current) return  // already called this render cycle
+    hasFinalized.current = true
     finaliseSession()
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   async function finaliseSession() {
     setIsLoading(true)
@@ -50,11 +57,11 @@ export default function ResultPage() {
       if (res.ok) {
         const data: SessionResult = await res.json()
         setResult(data)
-        // Update streak in store
+        // Update streak in store — use IST date to match what the server stored
         setStreak({
           currentStreak: data.streak.current,
           longestStreak: data.streak.longest,
-          lastCompletedDate: new Date().toISOString().slice(0, 10),
+          lastCompletedDate: todayIST(),
         })
       } else {
         // Fallback: compute result locally

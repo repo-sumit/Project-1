@@ -45,6 +45,10 @@ export function accuracyPct(correct: number, total: number): number {
  * - If last practice was yesterday → increment
  * - If last practice was today → no change (already counted)
  * - If last practice was 2+ days ago → reset to 1
+ *
+ * IMPORTANT: `today` must be pre-computed in IST by the caller
+ * (use todayIST() from lib/date.ts). Yesterday is derived from
+ * the `today` string so the comparison is always timezone-consistent.
  */
 export function calculateNewStreak(
   currentStreak: number,
@@ -57,9 +61,11 @@ export function calculateNewStreak(
     return { currentStreak, longestStreak }
   }
 
-  const yesterday = new Date()
-  yesterday.setDate(yesterday.getDate() - 1)
-  const yesterdayStr = yesterday.toISOString().slice(0, 10)
+  // Derive yesterday from the `today` param — avoids server vs client
+  // timezone mismatch that plagued the old `new Date()` approach.
+  const d = new Date(today + 'T12:00:00Z') // noon UTC → safe from day-boundary drift
+  d.setUTCDate(d.getUTCDate() - 1)
+  const yesterdayStr = d.toISOString().slice(0, 10)
 
   const newCurrent =
     lastCompletedDate === yesterdayStr

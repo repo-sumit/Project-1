@@ -1,11 +1,10 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useRef } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import { useSessionStore } from '@/store/sessionStore'
 import { useUserStore } from '@/store/userStore'
 import type { StoredAnswer } from '@/types'
-import { xpForAnswer } from '@/lib/xp'
 import QuestionCard from '@/components/practice/QuestionCard'
 import ProgressDots from '@/components/practice/ProgressDots'
 import ExplanationPanel from '@/components/practice/ExplanationPanel'
@@ -34,6 +33,11 @@ export default function SessionPage() {
     nextQuestion,
   } = useSessionStore()
 
+  // Prevents double-submission if user taps an answer twice rapidly.
+  // useRef is synchronous — unlike Zustand state it blocks immediately
+  // on the first tap, before any re-render has a chance to happen.
+  const isSubmittingRef = useRef(false)
+
   // ── Guard: recover session from storage if needed ─────────────────────
   useEffect(() => {
     if (questions.length === 0) {
@@ -61,9 +65,14 @@ export default function SessionPage() {
 
   // ── Submit answer ─────────────────────────────────────────────────────
   async function handleAnswer(selectedOption: string) {
+    // Guard 1: state-based (prevents tap after answer already recorded)
     if (isAnswered || isLoading) return
+    // Guard 2: ref-based (prevents double-tap in the window before state updates)
+    if (isSubmittingRef.current) return
+    isSubmittingRef.current = true
+
     const currentQuestion = questions[currentIndex]
-    if (!currentQuestion) return
+    if (!currentQuestion) { isSubmittingRef.current = false; return }
 
     setLoading(true)
 
@@ -91,26 +100,29 @@ export default function SessionPage() {
           xpAwarded: data.xpAwarded,
         })
       } else {
-        // Fallback: handle gracefully without server
+        // Server error — degrade gracefully, no XP awarded
         handleOfflineAnswer(currentQuestion.id, selectedOption)
       }
     } catch {
-      // Network error — degrade gracefully
+      // Network error — degrade gracefully, no XP awarded
       handleOfflineAnswer(currentQuestion.id, selectedOption)
+    } finally {
+      // Always release the ref so it doesn't block the next question
+      isSubmittingRef.current = false
     }
   }
 
   function handleOfflineAnswer(questionId: string, selectedOption: string) {
-    // In demo/offline mode: we don't know the answer yet.
-    // Show a loading state — this shouldn't happen in production.
-    // For now, record as "unknown" and move on.
+    // Server unreachable: record the attempt locally so the session can
+    // continue, but do NOT mark it correct and do NOT award XP.
+    // correctOption is left empty so nothing is highlighted as "right".
     recordAnswer({
       questionId,
       selectedOption,
-      isCorrect: false,
-      correctOption: selectedOption, // We don't know — show as if correct
-      explanation: 'Could not connect to server. Please check your internet connection.',
-      xpAwarded: xpForAnswer(false),
+      isCorrect:     false,
+      correctOption: '',   // unknown — don't mislead the student
+      explanation:   'Could not reach the server. Please check your connection.',
+      xpAwarded:     0,    // no XP for unverified answers
     })
   }
 
