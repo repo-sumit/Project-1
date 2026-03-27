@@ -64,14 +64,22 @@ export interface StoredAnswer extends AttemptResult {
 
 // ─── Daily Set ───────────────────────────────────────────────────────────────
 
+/** How the 10 questions were allocated across the three personalisation buckets. */
+export interface SetMix {
+  focus:         number   // from weak chapters (accuracy < 60%, ≥ 5 attempts)
+  reinforcement: number   // from chapters practised in the last 7 days
+  exploration:   number   // from new or less-practised chapters
+}
+
 export interface DailySet {
-  dailySetId: string
-  date: string             // 'YYYY-MM-DD'
-  questionCount: number
-  subjects: string[]       // display names e.g. ['Science', 'Maths']
+  dailySetId:       string
+  date:             string             // 'YYYY-MM-DD'
+  questionCount:    number
+  subjects:         string[]           // display names e.g. ['Science', 'Maths']
   estimatedMinutes: number
-  questions: Question[]
-  isCompleted: boolean
+  questions:        Question[]
+  isCompleted:      boolean
+  mix?:             SetMix | null      // null = pre-smart-selection row; undefined = old cache
 }
 
 // ─── Sessions ────────────────────────────────────────────────────────────────

@@ -90,9 +90,15 @@ CREATE TABLE daily_sets (
   question_ids JSONB       NOT NULL DEFAULT '[]',  -- ordered array of question UUIDs
   status       TEXT        NOT NULL DEFAULT 'pending'
                            CHECK (status IN ('pending','completed')),
+  mix          JSONB       NULL,   -- { focus: N, reinforcement: N, exploration: N }
   created_at   TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   UNIQUE (user_id, set_date)
 );
+COMMENT ON COLUMN daily_sets.mix IS
+  'Bucket breakdown stored at generation time. NULL for sets created before smart selection was introduced.';
+
+-- ── Migration for existing deployments (run once, idempotent) ──────────────
+-- ALTER TABLE daily_sets ADD COLUMN IF NOT EXISTS mix JSONB NULL;
 
 
 -- ─── TABLE: sessions ──────────────────────────────────────────────────────────
