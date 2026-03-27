@@ -6,19 +6,19 @@ import { createServerClient, isSupabaseConfigured } from '@/lib/supabase-server'
 
 const DEMO_CHAPTERS: Record<string, { id: string; name: string; orderIndex: number; totalQ: number }[]> = {
   'science-10': [
-    { id: 'c-sci10-01', name: 'Chemical Reactions and Equations', orderIndex: 1,  totalQ: 5 },
-    { id: 'c-sci10-02', name: 'Acids, Bases and Salts',           orderIndex: 2,  totalQ: 3 },
-    { id: 'c-sci10-03', name: 'Metals and Non-metals',            orderIndex: 3,  totalQ: 2 },
-    { id: 'c-sci10-04', name: 'Life Processes',                   orderIndex: 4,  totalQ: 1 },
-    { id: 'c-sci10-12', name: 'Electricity',                      orderIndex: 12, totalQ: 2 },
+    { id: 'c-s10-01', name: 'Chemical Reactions and Equations', orderIndex: 1,  totalQ: 3 },
+    { id: 'c-s10-02', name: 'Acids, Bases and Salts',           orderIndex: 2,  totalQ: 3 },
+    { id: 'c-s10-03', name: 'Metals and Non-metals',            orderIndex: 3,  totalQ: 3 },
+    { id: 'c-s10-04', name: 'Life Processes',                   orderIndex: 4,  totalQ: 3 },
+    { id: 'c-s10-12', name: 'Electricity',                      orderIndex: 12, totalQ: 3 },
   ],
   'maths-10': [
-    { id: 'c-math10-01', name: 'Real Numbers',              orderIndex: 1,  totalQ: 0 },
-    { id: 'c-math10-04', name: 'Quadratic Equations',       orderIndex: 4,  totalQ: 2 },
-    { id: 'c-math10-05', name: 'Arithmetic Progressions',   orderIndex: 5,  totalQ: 2 },
-    { id: 'c-math10-06', name: 'Triangles',                 orderIndex: 6,  totalQ: 2 },
-    { id: 'c-math10-10', name: 'Circles',                   orderIndex: 10, totalQ: 2 },
-    { id: 'c-math10-14', name: 'Statistics',                orderIndex: 14, totalQ: 2 },
+    { id: 'c-m10-01', name: 'Real Numbers',              orderIndex: 1,  totalQ: 3 },
+    { id: 'c-m10-04', name: 'Quadratic Equations',       orderIndex: 4,  totalQ: 3 },
+    { id: 'c-m10-05', name: 'Arithmetic Progressions',   orderIndex: 5,  totalQ: 3 },
+    { id: 'c-m10-06', name: 'Triangles',                 orderIndex: 6,  totalQ: 3 },
+    { id: 'c-m10-10', name: 'Circles',                   orderIndex: 10, totalQ: 3 },
+    { id: 'c-m10-14', name: 'Statistics',                orderIndex: 14, totalQ: 3 },
   ],
 }
 

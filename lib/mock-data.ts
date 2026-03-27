@@ -9,7 +9,7 @@ export const MOCK_QUESTIONS: Question[] = [
   // ── Science (Class 10) ─────────────────────────────────────────────────────
   {
     id: 'mock-q1',
-    chapterId: 'chemical-reactions',
+    chapterId: 'c-s10-01',
     subjectId: 'science-10',
     questionText:
       'Which of the following is a double displacement reaction?',
@@ -22,7 +22,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q2',
-    chapterId: 'chemical-reactions',
+    chapterId: 'c-s10-01',
     subjectId: 'science-10',
     questionText:
       'The process by which green plants make their own food using sunlight is called:',
@@ -35,7 +35,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q3',
-    chapterId: 'acids-bases',
+    chapterId: 'c-s10-02',
     subjectId: 'science-10',
     questionText:
       'Which of the following solutions will turn red litmus paper blue?',
@@ -48,7 +48,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q4',
-    chapterId: 'metals-nonmetals',
+    chapterId: 'c-s10-03',
     subjectId: 'science-10',
     questionText:
       'Which metal is stored in kerosene to prevent it from catching fire?',
@@ -61,7 +61,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q5',
-    chapterId: 'electricity',
+    chapterId: 'c-s10-12',
     subjectId: 'science-10',
     questionText:
       'The SI unit of electric charge is:',
@@ -76,7 +76,7 @@ export const MOCK_QUESTIONS: Question[] = [
   // ── Mathematics (Class 10) ─────────────────────────────────────────────────
   {
     id: 'mock-q6',
-    chapterId: 'quadratic-equations',
+    chapterId: 'c-m10-04',
     subjectId: 'maths-10',
     questionText:
       'The roots of the equation x² – 5x + 6 = 0 are:',
@@ -89,7 +89,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q7',
-    chapterId: 'triangles',
+    chapterId: 'c-m10-06',
     subjectId: 'maths-10',
     questionText:
       'If ΔABC ~ ΔPQR and AB/PQ = 2/3, then the ratio of their areas is:',
@@ -102,7 +102,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q8',
-    chapterId: 'arithmetic-progressions',
+    chapterId: 'c-m10-05',
     subjectId: 'maths-10',
     questionText:
       'The nth term of an AP is 7 – 3n. The common difference is:',
@@ -115,7 +115,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q9',
-    chapterId: 'circles',
+    chapterId: 'c-m10-10',
     subjectId: 'maths-10',
     questionText:
       'A tangent to a circle is perpendicular to the radius at the point of:',
@@ -128,7 +128,7 @@ export const MOCK_QUESTIONS: Question[] = [
   },
   {
     id: 'mock-q10',
-    chapterId: 'statistics',
+    chapterId: 'c-m10-14',
     subjectId: 'maths-10',
     questionText:
       'The measure of central tendency which is NOT affected by extreme values is:',

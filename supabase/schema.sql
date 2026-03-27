@@ -49,7 +49,7 @@ CREATE TABLE subjects (
 
 -- ─── TABLE: chapters ──────────────────────────────────────────────────────────
 CREATE TABLE chapters (
-  id          UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
+  id          TEXT        PRIMARY KEY,   -- human-readable e.g. 'c-m10-01'
   subject_id  TEXT        NOT NULL REFERENCES subjects(id) ON DELETE CASCADE,
   name        TEXT        NOT NULL,
   order_index SMALLINT    NOT NULL DEFAULT 1
@@ -62,7 +62,7 @@ COMMENT ON COLUMN chapters.order_index IS 'NCERT chapter number for ordering';
 -- responses. It is returned only from POST /api/attempts after the user answers.
 CREATE TABLE questions (
   id              UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
-  chapter_id      UUID        REFERENCES chapters(id) ON DELETE SET NULL,
+  chapter_id      TEXT        REFERENCES chapters(id) ON DELETE SET NULL,
   subject_id      TEXT        NOT NULL REFERENCES subjects(id),
   class_level     SMALLINT    NOT NULL,
   question_text   TEXT        NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE sessions (
   id               UUID        PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id          UUID        NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   daily_set_id     UUID        REFERENCES daily_sets(id) ON DELETE SET NULL,
-  chapter_id       UUID        REFERENCES chapters(id)   ON DELETE SET NULL,
+  chapter_id       TEXT        REFERENCES chapters(id)   ON DELETE SET NULL,
   subject_name     TEXT,                    -- denormalized for display
   started_at       TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   completed_at     TIMESTAMPTZ,
