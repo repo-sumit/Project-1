@@ -1,6 +1,5 @@
-import type { NextConfig } from 'next'
-
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   // Allow images from Supabase storage
   images: {
     remotePatterns: [
@@ -15,9 +14,7 @@ const nextConfig: NextConfig = {
     return [
       {
         source: '/api/:path*',
-        headers: [
-          { key: 'Cache-Control', value: 'no-store' },
-        ],
+        headers: [{ key: 'Cache-Control', value: 'no-store' }],
       },
     ]
   },

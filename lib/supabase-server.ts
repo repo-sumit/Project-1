@@ -1,25 +1,27 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, SupabaseClient } from '@supabase/supabase-js'
 
-// ─── Supabase Server Client ──────────────────────────────────────────────────
+// ─── Supabase Server Client ───────────────────────────────────────────────────
 // Used ONLY in API routes (server-side).
-// Uses service role key → bypasses RLS → full DB access.
-// NEVER import this in client components — it exposes the service role key.
+// Uses the service-role key → bypasses Row Level Security.
+// NEVER import this in any client component — it exposes the service key.
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+const supabaseUrl      = process.env.NEXT_PUBLIC_SUPABASE_URL
+const serviceRoleKey   = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 export const isSupabaseConfigured =
   Boolean(supabaseUrl) && Boolean(serviceRoleKey)
 
-export function createServerClient() {
-  if (!isSupabaseConfigured) {
-    return null
-  }
+/**
+ * Call this inside API routes to get a server-side Supabase client.
+ * Returns null when Supabase is not configured → caller falls back to demo mode.
+ */
+export function createServerClient(): SupabaseClient | null {
+  if (!isSupabaseConfigured) return null
+
   return createClient(supabaseUrl!, serviceRoleKey!, {
     auth: {
-      // Don't persist sessions on the server
       autoRefreshToken: false,
-      persistSession: false,
+      persistSession:   false,
     },
   })
 }

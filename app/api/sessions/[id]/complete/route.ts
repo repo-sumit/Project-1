@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient, isSupabaseConfigured } from '@/lib/supabase-server'
 import { xpForSession, calculateNewStreak, accuracyPct } from '@/lib/xp'
 
+type AttemptQuestionRelation = { subject_id: string } | { subject_id: string }[] | null
+
 // PATCH /api/sessions/[id]/complete
 // Called when a user finishes a session.
 // Calculates final score, XP, updates streak, returns summary.
@@ -88,7 +90,10 @@ export async function PATCH(
       const subjectStats: Record<string, { attempted: number; correct: number }> = {}
 
       for (const attempt of sessionAttempts) {
-        const subjectId = (attempt.questions as { subject_id: string })?.subject_id
+        const questionRelation = attempt.questions as AttemptQuestionRelation
+        const subjectId = Array.isArray(questionRelation)
+          ? questionRelation[0]?.subject_id
+          : questionRelation?.subject_id
         if (!subjectId) continue
         if (!subjectStats[subjectId]) {
           subjectStats[subjectId] = { attempted: 0, correct: 0 }

@@ -4,111 +4,123 @@ import { MOCK_ANSWERS } from '@/lib/mock-data'
 import { xpForAnswer } from '@/lib/xp'
 
 // POST /api/attempts
-// Accepts one answer, returns whether it was correct + the explanation.
-// This is the most called endpoint — keep it fast.
-//
-// SECURITY: correct_option is NEVER sent to client before this call.
-// The answer only exists on the server (DB or mock data).
+// Accepts one answer → returns correctness + explanation.
+// SECURITY: correct_option is stored only in DB, never sent with questions.
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     const { sessionId, questionId, selectedOption, userId } = body
 
-    // Validate
+    // Validate inputs
     if (!sessionId || !questionId || !selectedOption) {
       return NextResponse.json(
-        { error: 'Missing required fields: sessionId, questionId, selectedOption' },
+        { error: 'Missing: sessionId, questionId, selectedOption' },
         { status: 400 }
       )
     }
-    if (!['A', 'B', 'C', 'D'].includes(selectedOption)) {
-      return NextResponse.json({ error: 'selectedOption must be A, B, C, or D' }, { status: 400 })
+    const opt = String(selectedOption).toUpperCase()
+    if (!['A', 'B', 'C', 'D'].includes(opt)) {
+      return NextResponse.json(
+        { error: 'selectedOption must be A, B, C, or D' },
+        { status: 400 }
+      )
     }
 
     // ── Demo mode ─────────────────────────────────────────────────────────
     if (!isSupabaseConfigured) {
-      const answerData = MOCK_ANSWERS[questionId]
-      if (!answerData) {
-        // Unknown question — return a generic response
+      const ans = MOCK_ANSWERS[questionId]
+      if (!ans) {
+        // Unknown question in demo — treat as correct so UX doesn't break
         return NextResponse.json({
-          isCorrect: true,
-          correctOption: selectedOption,
-          explanation: 'Demo mode: explanation not available for this question.',
-          xpAwarded: xpForAnswer(true),
+          isCorrect:     true,
+          correctOption: opt,
+          explanation:   'Demo mode: this question has no answer key. In production, all answers are verified.',
+          xpAwarded:     xpForAnswer(true),
         })
       }
-      const isCorrect = selectedOption === answerData.correctOption
+      const isCorrect = opt === ans.correctOption
       return NextResponse.json({
         isCorrect,
-        correctOption: answerData.correctOption,
-        explanation: answerData.explanation,
-        xpAwarded: xpForAnswer(isCorrect),
+        correctOption: ans.correctOption,
+        explanation:   ans.explanation,
+        xpAwarded:     xpForAnswer(isCorrect),
       })
     }
 
     // ── Supabase mode ─────────────────────────────────────────────────────
     const supabase = createServerClient()!
 
-    // Check for duplicate submission (409 on same question + session)
-    if (sessionId && !sessionId.startsWith('local-')) {
+    // Prevent double submission for the same question in the same session
+    const isLocalSession = !sessionId || sessionId.startsWith('local-') || sessionId.startsWith('demo-')
+
+    if (!isLocalSession) {
       const { data: existing } = await supabase
         .from('attempts')
         .select('id, is_correct')
         .eq('session_id', sessionId)
         .eq('question_id', questionId)
-        .single()
+        .maybeSingle()
 
       if (existing) {
-        return NextResponse.json({ error: 'Already answered this question in this session' }, { status: 409 })
+        // Already answered — return the stored result (idempotent)
+        const ans = MOCK_ANSWERS[questionId]
+        return NextResponse.json({
+          isCorrect:     existing.is_correct,
+          correctOption: existing.is_correct ? opt : (ans?.correctOption ?? opt),
+          explanation:   ans?.explanation ?? 'You already answered this question.',
+          xpAwarded:     0,
+        })
       }
     }
 
-    // Fetch the correct answer from DB
-    const { data: question, error: qError } = await supabase
+    // Fetch correct answer from DB
+    const { data: question, error: qErr } = await supabase
       .from('questions')
       .select('correct_option, explanation')
       .eq('id', questionId)
       .single()
 
-    if (qError || !question) {
-      // Question not in DB — check mock data as fallback
-      const mockAnswer = MOCK_ANSWERS[questionId]
-      if (mockAnswer) {
-        const isCorrect = selectedOption === mockAnswer.correctOption
+    if (qErr || !question) {
+      // Fall back to mock answer data
+      const mockAns = MOCK_ANSWERS[questionId]
+      if (mockAns) {
+        const isCorrect = opt === mockAns.correctOption
         return NextResponse.json({
           isCorrect,
-          correctOption: mockAnswer.correctOption,
-          explanation: mockAnswer.explanation,
-          xpAwarded: xpForAnswer(isCorrect),
+          correctOption: mockAns.correctOption,
+          explanation:   mockAns.explanation,
+          xpAwarded:     xpForAnswer(isCorrect),
         })
       }
       return NextResponse.json({ error: 'Question not found' }, { status: 404 })
     }
 
-    const isCorrect = selectedOption === question.correct_option
+    const isCorrect = opt === question.correct_option
     const xpAwarded = xpForAnswer(isCorrect)
 
-    // Save attempt to DB (non-blocking — don't await if in a rush)
-    supabase.from('attempts').insert({
-      session_id: sessionId.startsWith('local-') ? null : sessionId,
-      user_id: userId ?? null,
-      question_id: questionId,
-      selected_option: selectedOption,
-      is_correct: isCorrect,
-      answered_at: new Date().toISOString(),
-    }).then(({ error }) => {
-      if (error) console.error('[attempts] Insert error:', error.message)
-    })
+    // Write attempt to DB asynchronously (don't block response)
+    if (!isLocalSession && userId) {
+      supabase.from('attempts').insert({
+        session_id:      sessionId,
+        user_id:         userId,
+        question_id:     questionId,
+        selected_option: opt,
+        is_correct:      isCorrect,
+        answered_at:     new Date().toISOString(),
+      }).then(({ error }) => {
+        if (error) console.error('[attempts] Insert error:', error.message)
+      })
+    }
 
     return NextResponse.json({
       isCorrect,
       correctOption: question.correct_option,
-      explanation: question.explanation,
+      explanation:   question.explanation,
       xpAwarded,
     })
-  } catch (e) {
-    console.error('[attempts POST] Error:', e)
+  } catch (err) {
+    console.error('[attempts] Unexpected error:', err)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }
